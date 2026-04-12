@@ -1,152 +1,129 @@
-# 🎵 Spotify Audio Features Recommender
+# 🎧 SonicSense — Intelligent Music Discovery
 
-An end-to-end **Music Recommender System** built with the [Spotify Audio Features dataset (Tomigelo)](https://www.kaggle.com/datasets/tomigelo/spotify-audio-features).  
-The system uses **content-based filtering** with track audio features (danceability, energy, tempo, etc.) to recommend similar songs.
+A context-aware **Music Recommendation System** built with the [Spotify Audio Features dataset](https://www.kaggle.com/datasets/tomigelo/spotify-audio-features).  
+SonicSense combines **content-based filtering**, **mood-context mapping**, **user behavioral modeling**, and **autoencoder-based latent embeddings** into a hybrid recommendation engine — with a premium Streamlit frontend for real-time interaction.
 
 ---
 
-## 📌 Features
-- Loads Spotify Audio Features dataset (CSV)
-- Builds a **content-based recommender** using `NearestNeighbors`
-- Evaluates recommendations with **Hit-Rate@K**
-- Inspect recommendations for any chosen seed track
-- Clean, modular Python implementation
+## ✨ Key Features
+
+| Module | Description |
+|---|---|
+| **Content Engine** | k-NN search on scaled audio features (cosine similarity) |
+| **Mood Matrix** | Automated mood classification + context-to-mood resolver |
+| **User Modeling** | Recency-weighted behavioral profiles with temporal awareness |
+| **Hybrid Scorer** | α·content + β·user + γ·mood fusion with explainability |
+| **Autoencoder** | Latent representation learning for improved distance metrics |
+| **Evaluation Suite** | Diversity, novelty, personalization, coverage, NDCG, hit-rate |
+| **Explainability** | Per-recommendation feature-contribution breakdowns |
 
 ---
 
 ## 📂 Project Structure
+
 ```
-
-spotify\_recommender/
-│── SpotifyAudioFeaturesApril2019.csv   # dataset
-│── offline_recommender.py                      # recommender class
-│── README.md                           # project documentation
-
-````
+SonicSense/
+├── app/
+│   ├── streamlit_app.py      # Main Streamlit application
+│   ├── pages.py              # Page renderers (Dashboard, Scan, Mood, etc.)
+│   └── retro_theme.py        # Premium UI theme system
+├── src/
+│   ├── content_model.py      # Content-based engine (k-NN)
+│   ├── mood_engine.py        # Mood classification & context mapping
+│   ├── user_model.py         # User behavioral modeling
+│   ├── hybrid_recommender.py # Hybrid recommendation scorer
+│   ├── autoencoder.py        # Autoencoder for latent embeddings
+│   ├── clustering_viz.py     # PCA / dimensionality reduction
+│   ├── evaluation.py         # Recommendation quality metrics
+│   ├── explainability.py     # Feature contribution explanations
+│   └── api_integration.py    # Spotify API scaffold
+├── data/                     # CSV datasets
+├── requirements.txt
+└── README.md
+```
 
 ---
 
-## ⚙️ Setup & Installation
+## ⚙️ Setup
 
-1. Clone this repo:
+1. **Clone & enter**:
    ```bash
    git clone https://github.com/yourusername/spotify-recommender.git
    cd spotify-recommender
-````
-
-````markdown
-## ⚙️ Setup
-
-2. (Optional) Create a virtual environment:
-
-   ```bash
-   python -m venv venv
-   source venv/bin/activate   # Mac/Linux
-   .\venv\Scripts\activate    # Windows
-````
-
-3. Install dependencies:
-
-   ```bash
-   pip install pandas scikit-learn numpy
    ```
 
-4. Download the dataset from [Kaggle](https://www.kaggle.com/datasets/tomigelo/spotify-audio-features)
-   Place `SpotifyAudioFeaturesApril2019.csv` inside the project folder.
+2. **Create environment**:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   pip install streamlit plotly
+   ```
+
+3. **Download dataset** from [Kaggle](https://www.kaggle.com/datasets/tomigelo/spotify-audio-features) and place CSVs in `data/`.
 
 ---
 
-## 🚀 Usage
+## 🚀 Launch
 
-### A) By track name/artist query (most convenient)
+### Streamlit UI (recommended)
 
 ```bash
-python offline_recommender.py --csv SpotifyAudioFeaturesApril2019.csv --seed-query "shape of you" --top 15
+streamlit run app/streamlit_app.py
 ```
 
-The script will:
+This launches the full SonicSense experience with:
+- **Dashboard** — system overview, mood distribution, status
+- **Track Scan** — search, fingerprint, and get recommendations
+- **Mood Matrix** — context-aware mood discovery
+- **User Profile** — behavioral modeling & personalized discovery
+- **Music Space** — PCA visualization of the feature landscape
+- **Diagnostics** — evaluation metrics & quality assessment
+- **Deep Scan** — side-by-side track comparison & analysis
 
-* Show top 10 matches for your query (track name + artist).
-* Auto-pick the first match as the seed.
-* Print the Top 15 recommended tracks with similarity.
-
----
-
-### B) By exact `track_id` (if you already know it)
+### CLI (quick recommendations)
 
 ```bash
-python offline_recommender.py --csv SpotifyAudioFeaturesApril2019.csv --seed-id 5cj54CVe4pQZ9cUKgbsZrG --top 10
+python offline_recommender.py --csv data/SpotifyAudioFeaturesApril2019.csv --seed-query "shape of you" --top 15
 ```
-
----
-
-### C) Multiple seeds (centroid of several songs)
-
-```bash
-python offline_recommender.py --csv SpotifyAudioFeaturesApril2019.csv --multi-seed-ids 5cj54CVe4pQZ9cUKgbsZrG,2yLy4mD9TIHOzHKn3gOhuw --top 20
-```
-
----
-
-### D) Faster testing on a subset
-
-```bash
-python offline_recommender.py --csv SpotifyAudioFeaturesApril2019.csv --seed-query "arijit singh" --top 10 --subset 50000
-```
-
----
-
-### E) Save recommendations to a CSV
-
-```bash
-python offline_recommender.py --csv SpotifyAudioFeaturesApril2019.csv --seed-query "dil diyan gallan" --top 25 --out recs.csv
-```
-
----
-
-### 🔎 Example Output
-
-```
-=== Recommendations ===
- rank    track_name      artist_name     track_id                     popularity  similarity  distance
-    1    Perfect         Ed Sheeran      0tgVpDi06FyKpA1z0VMD4v       85          0.952       0.048
-    2    Happier         Ed Sheeran      2RttW7RAu5nOAfq6YFvApB       83          0.948       0.052
-    3    Photograph      Ed Sheeran      1HNkqx9Ahdgi1Ixy2xkKkL       82          0.941       0.059
-    ...
-```
-
-* **similarity** = `1 − cosine_distance` (closer to 1.0 = more similar).
-* **popularity** (0–100) shown if available.
 
 ---
 
 ## 🧠 How it Works
 
-1. Selects key **audio features** (`danceability`, `energy`, `tempo`, etc.).
-2. Scales features with `StandardScaler`.
-3. Uses `NearestNeighbors` (cosine similarity) to find similar tracks.
-4. Evaluates recommendations using **Hit-Rate\@K**:
-
-   * Pick an artist with ≥2 songs
-   * Use one song as the "seed"
-   * Hide another song as the "target"
-   * Success if target appears in the top-K recommendations
+1. Extracts key **audio features** (`danceability`, `energy`, `tempo`, etc.)
+2. Scales features with `StandardScaler`
+3. Uses `NearestNeighbors` (cosine similarity) for content-based retrieval
+4. **Mood Engine** classifies tracks into 5 mood categories with context resolution
+5. **User Model** builds recency-weighted preference vectors from listening history
+6. **Hybrid Scorer** fuses content, user, and mood signals: `α·content + β·user + γ·mood`
+7. **Explainability** module provides per-recommendation feature contribution breakdowns
 
 ---
 
-## 📊 Evaluation Metric
+## 📊 Evaluation Metrics
 
-* **Hit-Rate\@K**: Fraction of test cases where at least one hidden track from the same artist is retrieved in the top-K recommendations.
-* Example: `Hit-Rate@10 = 0.42` → in 42% of cases, the system found a same-artist track in the top-10.
+| Metric | Description |
+|---|---|
+| **Hit-Rate@K** | Fraction of test cases where a same-artist track is in the top-K |
+| **NDCG@K** | Normalized discounted cumulative gain |
+| **Intra-list Diversity** | Average pairwise distance within recommendation lists |
+| **Novelty** | Information-theoretic surprise measure |
+| **Personalization** | Uniqueness across different user recommendation lists |
+| **Coverage** | Fraction of catalog represented across all recommendations |
 
 ---
 
-## 🔮 Future Improvements
+## 🔮 Future Roadmap
 
-* Add **Streamlit UI** for interactive recommendations
-* Use **Spotify Web API** for live playlists
-* Try **matrix factorization** or **deep learning embeddings**
-* Hybrid approach: combine **content-based** + **collaborative filtering**
+- [ ] Live Spotify Web API integration for real-time playlists
+- [ ] Autoencoder-trained latent embeddings for enhanced retrieval
+- [ ] Collaborative filtering hybrid layer
+- [ ] Playlist generation with transition smoothing
+- [ ] User authentication & persistent profiles
 
-```
+---
 
+<div align="center">
+<sub>Built with ♬ by SonicSense</sub>
+</div>

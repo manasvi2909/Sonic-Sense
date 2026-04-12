@@ -1,3 +1,15 @@
-pandas
-numpy
-scikit-learn
+# Core ML / Data
+pandas>=1.5
+numpy>=1.23
+scikit-learn>=1.2
+
+# Autoencoder
+torch>=2.0
+
+# Visualization
+matplotlib>=3.6
+seaborn>=0.12
+plotly>=5.0
+
+# Spotify API (optional — scaffold until credentials available)
+spotipy>=2.23

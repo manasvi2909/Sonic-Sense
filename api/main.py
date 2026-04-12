@@ -1,0 +1,158 @@
+from contextlib import asynccontextmanager
+from typing import Dict, Any, List, Optional
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from src.content_model import ContentEngine
+from src.hybrid_recommender import HybridRecommender
+from src.mood_engine import MoodEngine
+from src.user_model import UserModel, generate_synthetic_users
+
+# Global state
+app_state: Dict[str, Any] = {}
+
+class SearchQuery(BaseModel):
+    query: str
+
+class MoodQuery(BaseModel):
+    context: str
+    n: int = 10
+
+class UserRecQuery(BaseModel):
+    user_id: str
+    context: Optional[str] = None
+    n: int = 10
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load models on startup
+    engine = ContentEngine(n_neighbors=200, metric="cosine")
+    engine.fit_from_csvs(data_dir="data")
+
+    mood_engine = MoodEngine(engine.scaler)
+    user_model = UserModel(recency_halflife=10, like_boost=2.0)
+    hybrid = HybridRecommender(
+        engine, mood_engine, user_model, alpha=0.45, beta=0.30, gamma=0.25
+    )
+    users = generate_synthetic_users(engine, mood_engine, n_users=50, tracks_per_user=30)
+    
+    app_state["engine"] = engine
+    app_state["mood_engine"] = mood_engine
+    app_state["user_model"] = user_model
+    app_state["hybrid"] = hybrid
+    app_state["users"] = users
+    
+    yield
+    # Cleanup on shutdown
+    app_state.clear()
+
+
+app = FastAPI(title="SonicSense API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For local Vite development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/api/status")
+async def get_status():
+    engine = app_state["engine"]
+    users = app_state["users"]
+    return {
+        "status": "online",
+        "catalog_size": engine.catalog_size,
+        "feature_dim": engine.feature_dim,
+        "listener_profiles": len(users)
+    }
+
+@app.post("/api/search")
+async def search_tracks(req: SearchQuery):
+    engine = app_state.get("engine")
+    if not engine:
+        return {"error": "Engine not loaded"}
+    
+    hits_df = engine.search_tracks(req.query, limit=10)
+    hits_df = hits_df.fillna("")
+    
+    return {"results": hits_df.to_dict(orient="records")}
+
+@app.get("/api/users")
+async def get_users():
+    users = app_state.get("users", [])
+    return {
+        "users": [
+            {
+                "user_id": u.user_id,
+                "preferred_mood": u.preferred_mood,
+                "track_count": len(u.all_track_ids)
+            } for u in users
+        ]
+    }
+
+@app.post("/api/recommend/mood")
+async def recommend_mood(req: MoodQuery):
+    hybrid = app_state.get("hybrid")
+    if not hybrid:
+        return {"error": "Engine not loaded"}
+    
+    recs_df = hybrid.recommend_by_mood(req.context, n=req.n)
+    recs_df = recs_df.fillna("")
+    return {"results": recs_df.to_dict(orient="records")}
+
+@app.post("/api/recommend/user")
+async def recommend_user(req: UserRecQuery):
+    hybrid = app_state.get("hybrid")
+    users = app_state.get("users", [])
+    if not hybrid:
+        return {"error": "Engine not loaded"}
+    
+    # Find user profile
+    user_profile = next((u for u in users if u.user_id == req.user_id), None)
+    if not user_profile:
+        return {"error": "User not found"}
+    
+    recs_df = hybrid.recommend_for_user(user_profile, n=req.n, context=req.context)
+    recs_df = recs_df.fillna("")
+    return {"results": recs_df.to_dict(orient="records")}
+
+@app.get("/api/map")
+async def get_map_data():
+    engine = app_state.get("engine")
+    mood_engine = app_state.get("mood_engine")
+    if not engine or not mood_engine:
+        return {"error": "Engine not loaded"}
+    
+    # Compute 2D PCA for a sample
+    from src.clustering_viz import reduce_pca
+    import numpy as np
+    
+    sample_size = 5000
+    if len(engine.X) > sample_size:
+        rng = np.random.RandomState(42)
+        idxs = rng.choice(len(engine.X), size=sample_size, replace=False)
+    else:
+        idxs = np.arange(len(engine.X))
+        
+    X_sample = engine.X[idxs]
+    X_2d, _ = reduce_pca(X_sample, n_components=2)
+    moods = mood_engine.batch_assign_moods(X_sample)
+    
+    df_sample = engine.df.iloc[idxs]
+    
+    points = []
+    for i in range(len(X_2d)):
+        points.append({
+            "x": float(X_2d[i, 0]),
+            "y": float(X_2d[i, 1]),
+            "mood": moods[i],
+            "track_name": df_sample.iloc[i]["track_name"],
+            "artist_name": df_sample.iloc[i]["artist_name"]
+        })
+        
+    return {"points": points}
