@@ -1,79 +1,82 @@
-# 🎧 SonicSense — Elite Music Intelligence Platform
+# SonicSense: High-Dimensional Music Intelligence Platform
 
-SonicSense is a high-performance, production-grade music recommendation system powered by a massive 1.2M+ track vector space. Designed for precision music discovery, it replaces generic metadata queries with true content-based latent analysis and real-time behavioral modeling.
-
----
-
-## 💎 The "Deep-Glass" Experience
-The platform features an ultra-premium, frameless glass aesthetic with a focus on technical telemetry and spatial visualizations.
-
-| Module | Purpose |
-|---|---|
-| **Discovery Engine** | Real-time k-NN projection on a 1.2M track manifold. |
-| **Mood Matrix** | Centralized orbital radar for resolving contextual moods. |
-| **Personal Mixes** | Behavioral centroid modeling with recency-decay weighting. |
-| **Sound Map** | Spatial 2D PCA projection of the high-dimensional audio space. |
-| **Diagnostics Studio** | Live telemetry monitoring of system latency and RAM pressure. |
+SonicSense is a production-grade analytical system designed for large-scale music discovery and latent vector analysis. It utilizes a content-based recommendation architecture projected onto a 1.2M-track coordinate space, providing deep insights into categorical audio features and user behavioral trajectories.
 
 ---
 
-## 📂 Architecture & Stack
+## Technical Framework
 
-### Core Engine
-- **FastAPI Backend**: High-concurrency API handling search indices and ML inference.
-- **ML Logic**: Scikit-Learn based `NearestNeighbors` (Cosine Similarity) and `PCA` reduction.
-- **Dataset**: `tracks_features.csv` (1.2 Million Rows), optimized for 300K active memory-mapped samples on consumer hardware.
+### 1. Latent Vector Space Ingestion
+The system processes a comprehensive dataset of 1.2 Million tracks. Upon boot, the Backend Engine performs the following operations:
+- **Heuristic Data Cleaning**: Normalizes artist metadata (removing list literals and bracket noise via regex) and validates high-dimensional feature columns.
+- **Dimensionality Optimization**: Currently configured to memory-map a high-diversity subset of 300,000 tracks to maintain a sub-15s boot time while maximizing categorical coverage.
+- **Normalization**: Standardizes raw audio features (Danceability, Energy, Valence, etc.) using a `StandardScaler` to ensure uniform influence in the distance metric calculations.
 
-### Frontend Interface
-- **React + Vite**: Modern, performant UI with client-side routing.
-- **Lucide Icons**: High-fidelity technical iconography.
-- **Plotly.js**: Real-time spatial visualizations.
-- **Vanilla CSS**: Bespoke "Deep-Glass" design system.
+### 2. Search & Recommendation Logic
+SonicSense utilizes a k-Nearest Neighbors (k-NN) algorithm for finding focal points in the music manifold:
+- **Metric**: Cosine Similarity.
+- **Projection**: The system calculates the inverse cosine distance between the query track's vector and the global manifold, selecting the top 15 nearest entries.
+- **Hybrid Scorer**: Fuses content-based vectors with behavioral contexts to refine precision.
 
----
+### 3. Behavioral Centroid Modeling
+The "Personal Mixes" module utilizes a **Recency-Weighted Centroid** approach to profile listening habits:
+- **Centroid Calculation**: A user is represented as a single vector point in the music manifold.
+- **Exponential Decay**: Recent track interactions contribute significantly more to the user vector than legacy history, allowing the "Mix" to pivot dynamically to current taste.
+- **Frequency Weighting**: Repeated plays amplify the "gravity" of specific genres/mood clusters in the user's personal latent space.
 
-## ⚙️ Setup & Deployment
-
-### 1. Backend Environment
-```bash
-# Enter the root directory
-cd Spotify-Music-Recommender
-
-# Setup virtual environment
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 2. Frontend Environment
-```bash
-cd frontend
-npm install
-```
-
-### 3. Data Ingestion
-Download the `tracks_features.csv` dataset and place it in the `data/` directory. The engine will automatically map the 1.2M tracks upon boot.
+### 4. Spatial Projection (PCA)
+The Sound Map visualizes the high-dimensional feature set (9D+) using **Principal Component Analysis (PCA)**:
+- **Feature Reduction**: Projects the n-dimensional audio landscape onto a 2D plane while preserving global variance.
+- **Contextual Clustering**: Tracks are grouped by Mood Engine labels (Chill, Focus, Energetic, etc.), allowing users to see the spatial correlation between raw audio signatures and subjective moods.
 
 ---
 
-## 🚀 One-Click Launch
-Use the included automation script to boot both the ML engine and the Glass UI simultaneously:
-```bash
-./start.sh
-```
-- **Platform URL**: `http://localhost:3000`
-- **Engine URL**: `http://localhost:8000`
+## Module Overview
+
+### Discovery Engine
+The discovery hub uses a dual-pane architecture. The **Source Pane** facilitates focal point selection, while the **Projection Pane** renders calculated latent neighbors. This ensures the user can compare the primary vector to its mathematical neighbors in real-time.
+
+### Mood Matrix
+A centralized orbital resolution system. Instead of keyword matching, it maps subjective contexts (e.g., "Late Night," "Gym") to specific audio feature centroids, performing a distance search from those resolved "Golden Vectors."
+
+### Personal Mixes
+Provides behavioral telemetry. Users select profile personae to see how specific behavioral centroids (e.g., "Neural Architect") produce unique listening trajectories based on their historical vector movement.
+
+### Diagnostics Studio
+The technical command center for monitoring engine health. It reports real-time inference latency (ms), RAM pressure (MB), and the structural integrity of the active KNN index.
 
 ---
 
-## 🧠 Behavioral Modeling
-SonicSense uses **Weighted Behavioral Centroids** to predict your next track.
-- **Recency Boost**: Recent listens are exponentialy prioritized over legacy history.
-*   **Frequency Amplification**: Repeated interactions deepen the vector gravity.
-- **Mood Convergence**: Real-time context hints (Time of Day, User Profile) influence the hybrid scorer.
+## Deployment & Execution
+
+### Prerequisites
+- **Python 3.10+**: Required for the FastAPI ML engine.
+- **Node.js 18+**: Required for the React/Vite interface.
+- **Dataset**: `tracks_features.csv` must be located in the `/data` directory.
+
+### Launch Sequence
+1. **Repository Calibration**:
+   ```bash
+   pip install -r requirements.txt
+   cd frontend && npm install
+   ```
+
+2. **Full System Boot**:
+   ```bash
+   ./start.sh
+   ```
+   This script initializes the asynchronous FastAPI lifespan (loading and fitting the manifold) and boots the Vite dev server.
+
+---
+
+## Architecture Specification
+- **Backend**: FastAPI (Python)
+- **Frontend**: React 18 / Vite
+- **Visuals**: Plotly.js / Lucide
+- **Styling**: Deep-Glass Glassmorphism (Vanilla CSS)
 
 ---
 
 <div align="center">
-<sub>Built for the future of music discovery by SonicSense Intelligence</sub>
+SonicSense Intelligence Terminal // Dimensional Discovery Root
 </div>
