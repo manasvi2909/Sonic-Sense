@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
-import { BrainCircuit, Users, Activity, Clock, Hash } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { BrainCircuit, Users, Activity, ArrowLeft, Disc, Sparkles, ChevronRight, BarChart3, Database } from 'lucide-react'
 import Navbar from './Navbar'
 
 function Mixes() {
   const [users, setUsers] = useState([])
   const [selectedUserId, setSelectedUserId] = useState('')
+  const [selectedUser, setSelectedUser] = useState(null)
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetch('/api/users')
@@ -14,11 +17,20 @@ function Mixes() {
       .then(data => {
         setUsers(data.users)
         if (data.users.length > 0) {
-          setSelectedUserId(data.users[0].user_id)
+          const firstUser = data.users[0]
+          setSelectedUserId(firstUser.user_id)
+          setSelectedUser(firstUser)
         }
       })
       .catch(err => console.error("Error fetching users", err))
   }, [])
+
+  const handleUserSelect = (userId) => {
+    setSelectedUserId(userId)
+    const user = users.find(u => u.user_id === userId)
+    setSelectedUser(user)
+    setResults([]) // Clear previous results
+  }
 
   const generateMix = async () => {
     if (!selectedUserId) return
@@ -39,92 +51,118 @@ function Mixes() {
     setLoading(false)
   }
 
-  const msToMinSec = (ms) => {
-    if (!ms) return '--:--'
-    const minutes = Math.floor(ms / 60000)
-    const seconds = ((ms % 60000) / 1000).toFixed(0)
-    return minutes + ":" + (seconds < 10 ? '0' : '') + seconds
-  }
-
   return (
-    <div className="reveal-up">
+    <div className="dashboard-root">
       <Navbar />
-
-      <div className="dashboard-container section-wrapper">
+      
+      <div className="inner-container">
+        {/* HEADER AREA */}
         <div className="technical-header">
-           <div className="logo-text-ultra" style={{ fontSize: '9px', marginBottom: '8px', color: 'var(--accent-indigo)' }}>USER_MODEL / BEHAVIORAL_CENTROIDS</div>
-           <h2 style={{ fontSize: '36px', letterSpacing: 'var(--tracking-tighter)', fontWeight: 800 }}>Personal Mixes</h2>
-           <p style={{ color: 'var(--text-secondary)', fontSize: '15px', marginTop: '8px' }}>
-              Recency-weighted modeling of individual listening trajectories.
+           <div className="logo-text-ultra" style={{ fontSize: '10px', marginBottom: '12px', color: 'var(--accent-indigo)', letterSpacing: '0.2em' }}>
+             USER_MODEL / BEHAVIORAL_CENTROIDS
+           </div>
+           <h2 style={{ fontSize: '48px', letterSpacing: 'var(--tracking-tighter)', fontWeight: 800 }}>Personal Mixes</h2>
+           <p style={{ color: 'var(--text-secondary)', fontSize: '16px', marginTop: '12px', maxWidth: '600px' }}>
+             Synthesize unique listening trajectories using recency-decay behavioral modeling.
            </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '20px', marginBottom: '60px', alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', display: 'block' }}>
-              Select Behavioral Profile
-            </label>
-            <select 
-              value={selectedUserId} 
-              onChange={(e) => setSelectedUserId(e.target.value)}
-              className="command-input-ultra"
-              style={{ padding: '12px 24px', fontSize: '15px' }}
-            >
-              <option value="" disabled>SELECT_USER_ID_</option>
-              {users.map(u => (
-                <option key={u.user_id} value={u.user_id}>
-                  {u.user_id} ({u.preferred_mood}) — {u.track_count} TKS
-                </option>
-              ))}
-            </select>
+        <div className="split-pane-layout">
+          {/* PROFILE SELECTION PANE */}
+          <div className="pane-source">
+            <div className="glass-pane-inner">
+              <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <Users size={18} color="var(--accent-indigo)" />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.1em' }}>SELECT_PROFILE_</span>
+              </div>
+              
+              <div className="sleek-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                {users.map(u => (
+                  <div 
+                    key={u.user_id} 
+                    className={`sleek-item ${selectedUserId === u.user_id ? 'active' : ''}`}
+                    onClick={() => handleUserSelect(u.user_id)}
+                    style={selectedUserId === u.user_id ? { borderColor: 'var(--accent-indigo)', background: 'rgba(99, 102, 241, 0.08)' } : {}}
+                  >
+                    <div className="sleek-item-meta">
+                      <span className="sleek-item-title">{u.user_id}</span>
+                      <span className="sleek-item-subtitle">{u.preferred_mood.toUpperCase()} PREFERENCE</span>
+                    </div>
+                    <div className="sleek-item-stat" style={{ color: 'var(--accent-indigo)' }}>
+                      {u.track_count} TKS
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {selectedUser && (
+                <div style={{ marginTop: '32px', padding: '24px', background: 'rgba(99, 102, 241, 0.03)', borderRadius: '16px', border: '1px solid rgba(99, 102, 241, 0.1)' }}>
+                  <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '11px', fontFamily: 'var(--font-mono)', color: 'var(--accent-indigo)' }}>
+                    <BarChart3 size={14} /> PROFILE_INSIGHTS
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>LATENT_FOCUS</div>
+                      <div style={{ fontSize: '14px', fontWeight: 600 }}>{selectedUser.preferred_mood}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>VECTOR_DEPTH</div>
+                      <div style={{ fontSize: '14px', fontWeight: 600 }}>{selectedUser.track_count} Hits</div>
+                    </div>
+                  </div>
+                  <button 
+                    className="btn-premium" 
+                    onClick={generateMix} 
+                    disabled={loading}
+                    style={{ width: '100%', marginTop: '24px', background: 'var(--accent-indigo)', borderColor: 'var(--accent-indigo)' }}
+                  >
+                    <BrainCircuit size={18} />
+                    {loading ? "CALCULATING..." : "GENERATE_VECTORS"}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <button className="btn-premium" onClick={generateMix} disabled={loading} style={{ height: '48px' }}>
-            <BrainCircuit size={18} />
-            {loading ? "PROCESSING..." : "GENERATE MIX"}
-          </button>
+
+          {/* MIX GENERATION PANE */}
+          <div className="pane-projection">
+             {results.length > 0 ? (
+               <div className="reveal-up">
+                 <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div className="logo-text-ultra" style={{ fontSize: '11px', color: 'var(--accent-indigo)' }}>BEHAVIORAL_RESONANCE_SCAN</div>
+                    <div style={{ height: '1px', flex: 1, background: 'linear-gradient(90deg, var(--accent-indigo), transparent)', opacity: 0.2 }}></div>
+                 </div>
+
+                 <div className="sleek-list" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    {results.map((track, i) => (
+                      <div key={i} className="sleek-item" style={{ animationDelay: `${i * 0.05}s`, background: 'rgba(255,255,255,0.01)' }}>
+                        <div className="sleek-item-meta">
+                          <span className="sleek-item-title" style={{ fontSize: '16px' }}>{track.track_name}</span>
+                          <span className="sleek-item-subtitle">{track.artist_name}</span>
+                        </div>
+                        <div className="viz-container" style={{ width: '50px', height: '30px', marginBottom: '0', marginLeft: '12px' }}>
+                           <div className="viz-bar" style={{ height: `${20 + Math.random() * 80}%`, background: 'var(--accent-indigo)' }}></div>
+                           <div className="viz-bar" style={{ height: `${20 + Math.random() * 80}%`, background: 'var(--accent-indigo)' }}></div>
+                           <div className="viz-bar" style={{ height: `${20 + Math.random() * 80}%`, background: 'var(--accent-indigo)' }}></div>
+                        </div>
+                      </div>
+                    ))}
+                 </div>
+               </div>
+             ) : (
+               <div className="glass-pane-inner" style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.2, borderStyle: 'dashed' }}>
+                  <Database size={48} style={{ marginBottom: '24px' }} />
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px' }}>AWAITING_TRAJECTORY_CALCULATION</p>
+               </div>
+             )}
+          </div>
         </div>
 
-        {(results.length > 0 || loading) && (
-          <table className="tech-table">
-            <thead>
-              <tr>
-                <th style={{width: '60px'}}>ID</th>
-                <th style={{textAlign: 'left'}}>METADATA</th>
-                <th style={{textAlign: 'left'}}>PERSONAL_SCORE</th>
-                <th style={{textAlign: 'left'}}>DURATION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                   <td colSpan="4" style={{ textAlign: 'center', padding: '80px', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-secondary)' }}>CALIBRATING_VECTORS...</td>
-                </tr>
-              ) : (
-                results.map((track, i) => (
-                  <tr key={i} className="tech-row">
-                    <td className="tech-cell" style={{ textAlign: 'center', color: '#444', fontSize: '10px' }}>{i + 1}</td>
-                    <td className="tech-cell">
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                         <span style={{ fontWeight: 700, fontSize: '16px' }}>{track.track_name}</span>
-                         <span style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>{track.artist_name}</span>
-                      </div>
-                    </td>
-                    <td className="tech-cell">
-                       <span className="mono-val">
-                         {(track.hybrid_score || 0).toFixed(4)}
-                       </span>
-                    </td>
-                    <td className="tech-cell">
-                       <span className="mono-val" style={{ opacity: 0.6 }}>
-                          {msToMinSec(track.duration_ms)}
-                       </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        )}
+        <div style={{ marginTop: '100px', display: 'flex', justifyContent: 'center' }}>
+           <button className="btn-secondary-pill" onClick={() => navigate('/')}>
+              <ArrowLeft size={16} /> RETURN_TO_BASE
+           </button>
+        </div>
       </div>
     </div>
   )

@@ -25,11 +25,16 @@ class UserRecQuery(BaseModel):
     context: Optional[str] = None
     n: int = 10
 
+class TrackRecQuery(BaseModel):
+    track_id: str
+    n: int = 15
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Load models on startup
+    # Load massive 1.2M+ model on startup map
+    # Capped at 300k for optimal stability on MacBook hardware
     engine = ContentEngine(n_neighbors=200, metric="cosine")
-    engine.fit_from_csvs(data_dir="data")
+    engine.fit_from_csvs(csv_paths=["data/tracks_features.csv"], subset=300000)
 
     mood_engine = MoodEngine(engine.scaler)
     user_model = UserModel(recency_halflife=10, like_boost=2.0)
@@ -38,11 +43,34 @@ async def lifespan(app: FastAPI):
     )
     users = generate_synthetic_users(engine, mood_engine, n_users=50, tracks_per_user=30)
     
+    # Pre-calculate Map Data on Startup
+    from src.clustering_viz import reduce_pca
+    import numpy as np
+    
+    sample_size = 5000
+    rng = np.random.RandomState(42)
+    idxs = rng.choice(len(engine.X), size=min(sample_size, len(engine.X)), replace=False)
+    X_sample = engine.X[idxs]
+    X_2d, _ = reduce_pca(X_sample, n_components=2)
+    moods = mood_engine.batch_assign_moods(X_sample)
+    df_sample = engine.df.iloc[idxs]
+    
+    precalculated_points = []
+    for i in range(len(X_2d)):
+        precalculated_points.append({
+            "x": float(X_2d[i, 0]),
+            "y": float(X_2d[i, 1]),
+            "mood": moods[i],
+            "track_name": df_sample.iloc[i].get("track_name", "Unknown"),
+            "artist_name": df_sample.iloc[i].get("artist_name", "Unknown")
+        })
+
     app_state["engine"] = engine
     app_state["mood_engine"] = mood_engine
     app_state["user_model"] = user_model
     app_state["hybrid"] = hybrid
     app_state["users"] = users
+    app_state["precalculated_map"] = precalculated_points
     
     yield
     # Cleanup on shutdown
@@ -95,6 +123,20 @@ async def get_users():
         ]
     }
 
+@app.post("/api/recommend/track")
+async def recommend_track(req: TrackRecQuery):
+    engine = app_state.get("engine")
+    if not engine:
+        return {"error": "Engine not loaded"}
+    
+    try:
+        # recommend_by_id returns top N nearest neighbors excluding the seed itself by default
+        recs_df = engine.recommend_by_id(req.track_id, n=req.n)
+        recs_df = recs_df.fillna("")
+        return {"results": recs_df.to_dict(orient="records")}
+    except KeyError:
+        return {"error": "Track not found in vector space."}
+
 @app.post("/api/recommend/mood")
 async def recommend_mood(req: MoodQuery):
     hybrid = app_state.get("hybrid")
@@ -123,36 +165,7 @@ async def recommend_user(req: UserRecQuery):
 
 @app.get("/api/map")
 async def get_map_data():
-    engine = app_state.get("engine")
-    mood_engine = app_state.get("mood_engine")
-    if not engine or not mood_engine:
-        return {"error": "Engine not loaded"}
-    
-    # Compute 2D PCA for a sample
-    from src.clustering_viz import reduce_pca
-    import numpy as np
-    
-    sample_size = 5000
-    if len(engine.X) > sample_size:
-        rng = np.random.RandomState(42)
-        idxs = rng.choice(len(engine.X), size=sample_size, replace=False)
-    else:
-        idxs = np.arange(len(engine.X))
-        
-    X_sample = engine.X[idxs]
-    X_2d, _ = reduce_pca(X_sample, n_components=2)
-    moods = mood_engine.batch_assign_moods(X_sample)
-    
-    df_sample = engine.df.iloc[idxs]
-    
-    points = []
-    for i in range(len(X_2d)):
-        points.append({
-            "x": float(X_2d[i, 0]),
-            "y": float(X_2d[i, 1]),
-            "mood": moods[i],
-            "track_name": df_sample.iloc[i]["track_name"],
-            "artist_name": df_sample.iloc[i]["artist_name"]
-        })
-        
+    points = app_state.get("precalculated_map")
+    if not points:
+        return {"error": "Map data not ready"}
     return {"points": points}

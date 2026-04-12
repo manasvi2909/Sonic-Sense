@@ -100,7 +100,20 @@ class ContentEngine:
         paths = _resolve_data_paths(csv_paths, data_dir)
         frames = []
         for p in paths:
-            raw = pd.read_csv(p)
+            raw = pd.read_csv(p, low_memory=False)
+            
+            # Map newer Kaggle datasets (e.g. 1.2M Tracks) cleanly
+            rename_map = {
+                "id": "track_id",
+                "name": "track_name",
+                "artists": "artist_name",
+            }
+            raw = raw.rename(columns=rename_map)
+            
+            # If the user's string representation of artists is a list literal "['Artist']", clean it
+            if "artist_name" in raw.columns and raw["artist_name"].dtype == "object":
+                raw["artist_name"] = raw["artist_name"].astype(str).str.replace(r"\[|\]|'", "", regex=True)
+
             missing = [c for c in REQUIRED_COLS if c not in raw.columns]
             if missing:
                 raise ValueError(f"{p} missing required columns: {missing}")

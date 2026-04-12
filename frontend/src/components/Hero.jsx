@@ -1,16 +1,44 @@
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Cpu, Target, AudioWaveform } from 'lucide-react'
+import { ArrowRight, Sparkles } from 'lucide-react'
 import Navbar from './Navbar'
 
 function Hero() {
   const navigate = useNavigate()
+  const transitionRef = useRef(null)
+  const bentoRef = useRef(null)
+  const [lineVisible, setLineVisible] = useState(false)
+  const [bentoVisible, setBentoVisible] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        // Continuous Trigger Logic: Resets when off-screen
+        if (entry.target.id === 'transition-trigger') {
+          setLineVisible(entry.isIntersecting)
+        }
+        if (entry.target.id === 'bento-trigger') {
+          setBentoVisible(entry.isIntersecting)
+        }
+      })
+    }, { threshold: 0.15 })
+
+    if (transitionRef.current) observer.observe(transitionRef.current)
+    if (bentoRef.current) observer.observe(bentoRef.current)
+
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div className="reveal-up">
       <Navbar />
       
-      {/* RESTORED PERFECT HEADER */}
       <section className="hero-container">
+        <div className="hero-caption-pill staggered-item" style={{ animationDelay: '0.05s', textTransform: 'none', letterSpacing: '0.02em', fontSize: '13px' }}>
+          <Sparkles size={14} style={{ marginRight: '8px', color: 'var(--accent-cyan)' }} />
+          Contextual mapping & advanced audio intelligence
+        </div>
+        
         <h1 className="hero-main-title text-shimmer-platinum staggered-item" style={{ animationDelay: '0.1s' }}>
            Intelligent<br/>
            <span className="text-gradient">Music Discovery.</span>
@@ -30,57 +58,86 @@ function Hero() {
         </div>
       </section>
 
-      {/* INTELLIGENCE MODULES (BENTO) */}
-      <section className="section-wrapper staggered-item" style={{ animationDelay: '0.4s' }}>
-        <h2 style={{ fontSize: '42px', marginBottom: '60px', letterSpacing: 'var(--tracking-tighter)', fontWeight: 800 }}>Intelligence Modules</h2>
+      <div className="transition-container" ref={transitionRef} id="transition-trigger">
+        <div className={`transition-line ${lineVisible ? 'start-grow' : ''}`}></div>
+      </div>
+
+      <section 
+        className="section-wrapper" 
+        style={{ 
+          opacity: bentoVisible ? 1 : 0, 
+          transform: bentoVisible ? 'translateY(0)' : 'translateY(40px)',
+          transition: 'all 1s cubic-bezier(0.16, 1, 0.3, 1)' 
+        }}
+        ref={bentoRef}
+        id="bento-trigger"
+      >
+        <h2 style={{ fontSize: '42px', marginBottom: '80px', letterSpacing: 'var(--tracking-tighter)', fontWeight: 800, textAlign: 'center', opacity: 0.9 }}>Intelligence Architecture</h2>
         
-        <div className="bento-grid-ultra">
-          <div className="glass-panel bento-item item-large" onClick={() => navigate('/mixes')}>
-            <div className="bento-content">
-              <div>
-                <Cpu size={32} color="var(--accent-indigo)" style={{marginBottom: '20px'}}/>
-                <h3 style={{fontSize: '28px', marginBottom: '16px', fontWeight: 700}}>Behavioral Vectors</h3>
-                <p style={{color: 'var(--text-secondary)', maxWidth: '400px', fontSize: '15.5px'}}>
-                   Recency-decay projections mapping your unique sonic evolution across the global latent plane.
-                </p>
-              </div>
-              <div className="logo-text-ultra" style={{fontSize: '9px', marginTop: '30px'}}>Access Core →</div>
+        <div className="frameless-dash-container">
+          
+          {/* Frameless Pane 1: Behavior */}
+          <div className="glass-pane-frameless" style={{ gridColumn: '1 / 9', cursor: 'pointer' }} onClick={() => navigate('/mixes')}>
+            <div className="abstract-spectrum-huge">
+               <div className="abstract-bar" style={{height: '10%'}}></div>
+               <div className="abstract-bar" style={{height: '30%'}}></div>
+               <div className="abstract-bar" style={{height: '80%'}}></div>
+               <div className="abstract-bar" style={{height: '50%'}}></div>
+               <div className="abstract-bar" style={{height: '100%'}}></div>
+               <div className="abstract-bar" style={{height: '40%'}}></div>
+               <div className="abstract-bar" style={{height: '70%'}}></div>
+               <div className="abstract-bar" style={{height: '20%'}}></div>
             </div>
+            <span className="dash-tag-floating">sys_module // vectors</span>
+            <h3>Behavioral Vectors</h3>
+            <p style={{ maxWidth: '420px' }}>
+               Recency-decay projections mapping your unique sonic evolution across the global latent plane.
+            </p>
           </div>
 
-          <div className="glass-panel bento-item item-medium" onClick={() => navigate('/mood')}>
-            <div className="bento-content">
-              <div>
-                <Target size={32} color="var(--accent-magenta)" style={{marginBottom: '20px'}}/>
-                <h3 style={{fontSize: '28px', marginBottom: '16px', fontWeight: 700}}>Mood Matrix</h3>
-                <p style={{color: 'var(--text-secondary)', fontSize: '15.5px'}}>
-                   Semantic context resolution via behavioral embeddings and cluster resolution.
-                </p>
-              </div>
-              <div className="logo-text-ultra" style={{fontSize: '9px', marginTop: '30px'}}>Open Resolver →</div>
-            </div>
+          {/* Frameless Pane 2: Mood */}
+          <div className="glass-pane-frameless" style={{ gridColumn: '5 / 13', marginTop: '-100px', cursor: 'pointer' }} onClick={() => navigate('/mood')}>
+            <div className="abstract-radar-huge"></div>
+            <span className="dash-tag-floating" style={{ color: 'var(--accent-magenta)' }}>sys_cluster // mood</span>
+            <h3>Mood Matrix</h3>
+            <p style={{ maxWidth: '400px' }}>
+               Semantic context resolution via behavioral embeddings and dynamic cluster bounding.
+            </p>
           </div>
 
-          <div className="glass-panel bento-item item-small" onClick={() => navigate('/map')}>
-            <div className="bento-content">
-               <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
-                  <AudioWaveform size={24} color="var(--accent-cyan)" />
-                  <h3 style={{fontSize: '20px', fontWeight: 700}}>Sound Map</h3>
-               </div>
-               <p style={{fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '8px'}}>Visual PCA projection of 124K+ audio vectors on a 2D coordinate layer.</p>
+          {/* Frameless Pane 3: Sound Map */}
+          <div className="glass-pane-frameless" style={{ gridColumn: '1 / 7', marginTop: '-60px', cursor: 'pointer' }} onClick={() => navigate('/map')}>
+            <div className="abstract-grid-plane"></div>
+            <div className="abstract-scatter-huge">
+               <div className="scatter-dot dot-1"></div>
+               <div className="scatter-dot dot-2"></div>
+               <div className="scatter-dot dot-3"></div>
             </div>
+            <span className="dash-tag-floating">core_projection // pca</span>
+            <h3>Sound Map</h3>
+            <p style={{ maxWidth: '350px' }}>
+              Visual principal component analysis plotting 124K+ audio vectors on a 2D sensory plane.
+            </p>
           </div>
           
-          <div className="glass-panel bento-item item-small" onClick={() => navigate('/diagnostics')}>
-            <div className="bento-content">
-               <h3 style={{fontSize: '20px', fontWeight: 700}}>Diagnostics</h3>
-               <p style={{fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: '8px'}}>Real-time latency telemetry and precision scoring of the inference model.</p>
+          {/* Frameless Pane 4: Diagnostics */}
+          <div className="glass-pane-frameless" style={{ gridColumn: '6 / 13', marginTop: '-160px', cursor: 'pointer' }} onClick={() => navigate('/diagnostics')}>
+            <div className="abstract-telemetry-huge">
+               <div className="telemetry-node node-start"></div>
+               <div className="telemetry-pulse"></div>
+               <div className="telemetry-node node-end"></div>
             </div>
+            <span className="dash-tag-floating" style={{ color: 'var(--text-secondary)' }}>sys_status // telemetry</span>
+            <h3>Diagnostics Core</h3>
+            <p style={{ maxWidth: '350px' }}>
+              Real-time latency telemetry and automated precision scoring of the inference models.
+            </p>
           </div>
+          
         </div>
       </section>
 
-      <footer className="section-wrapper" style={{ textAlign: 'center', borderTop: '1px solid var(--glass-border)', opacity: 0.3, letterSpacing: '0.4em', fontSize: '10px' }}>
+      <footer className="section-wrapper" style={{ textAlign: 'center', opacity: 0.8, letterSpacing: '0.4em', fontSize: '10px', paddingTop: '100px', color: 'var(--accent-cyan)', textShadow: '0 0 10px rgba(0, 229, 255, 0.4)' }}>
          &copy; 2026 SONICSENSE // QUANTUM SOUND INTELLIGENCE
       </footer>
     </div>

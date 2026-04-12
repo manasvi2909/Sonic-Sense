@@ -4,7 +4,7 @@ import Discovery from './components/Discovery'
 import Mixes from './components/Mixes'
 import MoodMatrix from './components/MoodMatrix'
 import SoundMap from './components/SoundMap'
-import Placeholder from './components/Placeholder'
+import DiagnosticsStudio from './components/DiagnosticsStudio'
 
 function App() {
   return (
@@ -20,8 +20,7 @@ function App() {
         <Route path="/mixes" element={<Mixes />} />
         <Route path="/mood" element={<MoodMatrix />} />
         <Route path="/map" element={<SoundMap />} />
-        <Route path="/diagnostics" element={<Placeholder />} />
-        <Route path="/compare" element={<Placeholder />} />
+        <Route path="/diagnostics" element={<DiagnosticsStudio />} />
       </Routes>
     </Router>
   )

@@ -227,9 +227,21 @@ def generate_synthetic_users(
     for mood_label, tid in zip(all_moods, engine.df["track_id"]):
         mood_to_ids[mood_label].append(tid)
 
+    PERSONA_NAMES = [
+        "Neural Architect", "Ambient Analyst", "Vaporwave Visionary", "Acoustic Voyager",
+        "Rhythm Specialist", "Sentiment Engineer", "BPM Balancer", "Spectral Explorer",
+        "Frequency Curator", "Lofi Logician", "Sonic Strategist", "Melody Miner",
+        "Vector Virtuoso", "Latent Listener", "Dissonance Director", "Harmony Handler",
+        "Pulse Programmer", "Echo Enthusiast", "Timbre Technician", "Synth Scientist"
+    ]
+
     users: List[UserProfile] = []
     for i in range(n_users):
         dominant_mood = MOOD_NAMES[i % len(MOOD_NAMES)]
+        persona = PERSONA_NAMES[i % len(PERSONA_NAMES)]
+        
+        # Create a more readable user ID with persona + index
+        user_id = f"{persona} {i+1:02d}"
 
         # 60 % from dominant mood, 40 % from others
         n_dominant = int(tracks_per_user * 0.6)
@@ -269,7 +281,7 @@ def generate_synthetic_users(
         timestamps.sort()  # oldest first
 
         users.append(UserProfile(
-            user_id=f"synth_user_{i:03d}",
+            user_id=user_id,
             liked_track_ids=liked,
             recent_track_ids=all_selected,
             play_counts=play_counts,
