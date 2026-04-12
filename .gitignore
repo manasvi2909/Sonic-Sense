@@ -38,3 +38,4 @@ data/
 *.parquet
 *.h5
 *.pkl
+!data/production_sample.csv

@@ -31,10 +31,21 @@ class TrackRecQuery(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Load massive 1.2M+ model on startup map
-    # Capped at 300k for optimal stability on MacBook hardware
+    import os
+    is_vercel = os.environ.get("VERCEL") == "1"
+    
+    # Environment-aware data loading
+    if is_vercel:
+        # Production (Vercel) - Use 50k sample for serverless stability
+        data_path = "data/production_sample.csv"
+        subset_size = 50000
+    else:
+        # Local Development - Use full 1.2M dataset capped at 300k
+        data_path = "data/tracks_features.csv"
+        subset_size = 300000
+
     engine = ContentEngine(n_neighbors=200, metric="cosine")
-    engine.fit_from_csvs(csv_paths=["data/tracks_features.csv"], subset=300000)
+    engine.fit_from_csvs(csv_paths=[data_path], subset=subset_size)
 
     mood_engine = MoodEngine(engine.scaler)
     user_model = UserModel(recency_halflife=10, like_boost=2.0)
