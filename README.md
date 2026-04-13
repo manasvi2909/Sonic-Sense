@@ -9,8 +9,10 @@ SonicSense is a production-grade analytical system designed for large-scale musi
 ### 1. Latent Vector Space Ingestion
 The system processes a comprehensive dataset of 1.2 Million tracks. Upon boot, the Backend Engine performs the following operations:
 - **Heuristic Data Cleaning**: Normalizes artist metadata (removing list literals and bracket noise via regex) and validates high-dimensional feature columns.
-- **Dimensionality Optimization**: Currently configured to memory-map a high-diversity subset of 300,000 tracks to maintain a sub-15s boot time while maximizing categorical coverage.
-- **Normalization**: Standardizes raw audio features (Danceability, Energy, Valence, etc.) using a `StandardScaler` to ensure uniform influence in the distance metric calculations.
+- **Dimensionality Optimization**: 
+    - **Local Environment**: Currently configured to memory-map a high-diversity subset of **300,000 tracks** (extensible to 1M+ depending on RAM).
+    - **Production (Vercel)**: Automatically pivots to a stabilized **50,000-track subset** to ensure the system fits within serverless memory and cold-start constraints.
+- **Dependency Management**: To stay within Vercel's 500MB storage limit, the production release is optimized by omitting large deep-learning libraries (e.g., PyTorch) and static plotting tools (Matplotlib), focusing exclusively on the core interactive Scikit-Learn engine.
 
 ### 2. Search & Recommendation Logic
 SonicSense utilizes a k-Nearest Neighbors (k-NN) algorithm for finding focal points in the music manifold:
@@ -66,6 +68,9 @@ The technical command center for monitoring engine health. It reports real-time 
    ./start.sh
    ```
    This script initializes the asynchronous FastAPI lifespan (loading and fitting the manifold) and boots the Vite dev server.
+
+> [!NOTE]
+> **Production Context**: The Cloud/Vercel release uses an optimized, serverless-friendly subset of the engine (50k tracks). Deep-learning modules (Autoencoders) and static visualization suites are reserved for the full Local Environment (300k+ tracks) to maintain high-precision real-time response times on the edge.
 
 ---
 
