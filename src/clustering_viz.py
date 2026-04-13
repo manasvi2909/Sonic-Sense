@@ -29,10 +29,14 @@ try:
 except ImportError:
     _TSNE_AVAILABLE = False
 
-import matplotlib
-matplotlib.use("Agg")  # non-interactive backend
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
+try:
+    import matplotlib
+    matplotlib.use("Agg")  # non-interactive backend
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as mcolors
+    _PLOTTING_AVAILABLE = True
+except ImportError:
+    _PLOTTING_AVAILABLE = False
 
 
 # ── Colour Palette ───────────────────────────────────────────────────────────
@@ -45,7 +49,7 @@ MOOD_COLOURS: Dict[str, str] = {
     "Focus":       "#7ED6A4",
 }
 
-CLUSTER_CMAP = plt.cm.get_cmap("Set2")
+CLUSTER_CMAP = plt.cm.get_cmap("Set2") if _PLOTTING_AVAILABLE else None
 
 
 # ── Clustering ───────────────────────────────────────────────────────────────
