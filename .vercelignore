@@ -1,0 +1,4 @@
+# Ignore large dataset files for serverless constraints
+data/tracks_features.csv
+data/SpotifyAudioFeatures*.csv
+*.ipynb

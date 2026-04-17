@@ -31,6 +31,13 @@ class TrackRecQuery(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Optional startup logic if needed
+    yield
+    # Cleanup on shutdown
+    app_state.clear()
+
+
+def load_models():
     import os
     is_vercel = os.environ.get("VERCEL") == "1"
     
@@ -82,11 +89,10 @@ async def lifespan(app: FastAPI):
     app_state["hybrid"] = hybrid
     app_state["users"] = users
     app_state["precalculated_map"] = precalculated_points
-    
-    yield
-    # Cleanup on shutdown
-    app_state.clear()
 
+def ensure_initialized():
+    if "engine" not in app_state:
+        load_models()
 
 app = FastAPI(title="SonicSense API", lifespan=lifespan)
 
@@ -101,6 +107,7 @@ app.add_middleware(
 
 @app.get("/api/status")
 async def get_status():
+    ensure_initialized()
     engine = app_state["engine"]
     users = app_state["users"]
     return {
@@ -112,6 +119,7 @@ async def get_status():
 
 @app.post("/api/search")
 async def search_tracks(req: SearchQuery):
+    ensure_initialized()
     engine = app_state.get("engine")
     if not engine:
         return {"error": "Engine not loaded"}
@@ -123,6 +131,7 @@ async def search_tracks(req: SearchQuery):
 
 @app.get("/api/users")
 async def get_users():
+    ensure_initialized()
     users = app_state.get("users", [])
     return {
         "users": [
@@ -136,6 +145,7 @@ async def get_users():
 
 @app.post("/api/recommend/track")
 async def recommend_track(req: TrackRecQuery):
+    ensure_initialized()
     engine = app_state.get("engine")
     if not engine:
         return {"error": "Engine not loaded"}
@@ -150,6 +160,7 @@ async def recommend_track(req: TrackRecQuery):
 
 @app.post("/api/recommend/mood")
 async def recommend_mood(req: MoodQuery):
+    ensure_initialized()
     hybrid = app_state.get("hybrid")
     if not hybrid:
         return {"error": "Engine not loaded"}
@@ -160,6 +171,7 @@ async def recommend_mood(req: MoodQuery):
 
 @app.post("/api/recommend/user")
 async def recommend_user(req: UserRecQuery):
+    ensure_initialized()
     hybrid = app_state.get("hybrid")
     users = app_state.get("users", [])
     if not hybrid:
@@ -176,6 +188,7 @@ async def recommend_user(req: UserRecQuery):
 
 @app.get("/api/map")
 async def get_map_data():
+    ensure_initialized()
     points = app_state.get("precalculated_map")
     if not points:
         return {"error": "Map data not ready"}
