@@ -32,10 +32,11 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Data
-data/
-*.csv
-*.parquet
-*.h5
-*.pkl
+# Data - ignore large files but keep production_sample.csv
+data/*.parquet
+data/*.h5
+data/*.pkl
+data/tracks_features.csv
+data/SpotifyAudioFeaturesApril2019.csv
+data/SpotifyAudioFeaturesNov2018.csv
 !data/production_sample.csv
