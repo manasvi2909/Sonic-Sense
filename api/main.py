@@ -1,3 +1,9 @@
+import os
+import sys
+
+# Vercel runs from the api/ directory — add the repo root so `src.*` imports work
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from contextlib import asynccontextmanager
 from typing import Dict, Any, List, Optional
 

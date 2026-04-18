@@ -6,11 +6,11 @@
       "use": "@vercel/python"
     },
     {
-      "src": "api/index.py",
+      "src": "api/main.py",
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "50mb",
-        "includeFiles": "{src/**/*.py,data/production_sample.csv}"
+        "includeFiles": ["src/**/*.py", "data/production_sample.csv"]
       }
     },
     {
@@ -31,7 +31,7 @@
     },
     {
       "src": "/api/(.*)",
-      "dest": "api/index.py"
+      "dest": "api/main.py"
     },
     {
       "src": "/(.*)",
