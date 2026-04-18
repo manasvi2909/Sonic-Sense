@@ -154,7 +154,7 @@ async def search_tracks(req: SearchQuery):
     if not engine:
         return {"error": "Engine not loaded"}
     
-    hits_df = engine.search_tracks(req.query, limit=50)
+    hits_df = engine.search_tracks(req.query, limit=10)
     hits_df = hits_df.fillna("")
     
     return {"results": hits_df.to_dict(orient="records")}
