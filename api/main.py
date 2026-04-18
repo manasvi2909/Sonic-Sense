@@ -108,9 +108,30 @@ app.add_middleware(
 )
 
 
+@app.get("/api/health")
+async def health_check():
+    """Lightweight health check — no model loading."""
+    import os, sys
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    csv_path = os.path.join(base, "data", "production_sample.csv")
+    return {
+        "alive": True,
+        "python": sys.version,
+        "cwd": os.getcwd(),
+        "base_dir": base,
+        "csv_exists": os.path.exists(csv_path),
+        "sys_path_0": sys.path[:3],
+        "vercel_env": os.environ.get("VERCEL", "not_set"),
+    }
+
+
 @app.get("/api/status")
 async def get_status():
-    ensure_initialized()
+    try:
+        ensure_initialized()
+    except Exception as e:
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
     engine = app_state["engine"]
     users = app_state["users"]
     return {
