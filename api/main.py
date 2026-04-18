@@ -41,14 +41,17 @@ def load_models():
     import os
     is_vercel = os.environ.get("VERCEL") == "1"
     
+    # Calculate BASE_DIR relative to api/main.py
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
     # Environment-aware data loading
     if is_vercel:
         # Production (Vercel) - Use 50k sample for serverless stability
-        data_path = "data/production_sample.csv"
+        data_path = os.path.join(BASE_DIR, "data", "production_sample.csv")
         subset_size = 50000
     else:
         # Local Development - Use full 1.2M dataset capped at 300k
-        data_path = "data/tracks_features.csv"
+        data_path = os.path.join(BASE_DIR, "data", "tracks_features.csv")
         subset_size = 300000
 
     engine = ContentEngine(n_neighbors=200, metric="cosine")
